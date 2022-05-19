@@ -22,6 +22,27 @@ def clear_form():
     st.session_state["customerFeedbackName"] = ""
     st.session_state["customerFeedbackEmail"] = ""
     st.session_state["customerFeedbackMessage"] = ""
+@st.cache
+def sketch_img(img):
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #applying median filter
+    img_gray = cv2.medianBlur(img_gray,5)  
+    #detecting the images
+    edges = cv2.Laplacian(img_gray,cv2.CV_8U,ksize =5)  
+    #threhold for images
+    ret, thresholded = cv2.threshold(edges, 70, 255, cv2.THRESH_BINARY_INV) 
+    return thresholded
+#cartoonize the images
+@st.cache
+def cartoonize_image(img, gray_mode = False):
+    thresholded = sketch_img(img)
+    #applying bilateral fliter wid big numbers to get cartoonnized
+    filtered= cv2.bilateralFilter(img,10,250,250)
+    cartoonized = cv2.bitwise_and(filtered, filtered, mask=thresholded)
+    if gray_mode:
+        return cv2.cvtColor(cartoonized, cv2.COLOR_BGR2GRAY)
+    return cartoonized
+
 with st.sidebar:
     choose = option_menu("Apps", ["Photo Editing", "Project Planning", "Screen Interactions", "About", "Contact"],
         icons=[ 'camera fill', 'kanban', 'calculator','info-square','envelope'],
@@ -49,23 +70,47 @@ if choose == "Photo Editing":
         
     #Add file uploader to allow users to upload photos
     uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
-    if uploaded_file is not None:
+    option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Cartoon', 'Cartoon Grey', 'PencilSketch Color', 'PencilSketch Gray','Stylized Image'))
+    if uploaded_file is not None and option != '':
         image = Image.open(uploaded_file)
         
         col1, col2 = st.columns( [0.5, 0.5])
         with col1:
             st.markdown('<p style="text-align: center;">Before</p>',unsafe_allow_html=True)
             st.image(image,width=500)  
-
         with col2:
             st.markdown('<p style="text-align: center;">After</p>',unsafe_allow_html=True)
-
-            converted_img = np.array(image.convert('RGB')) 
-            gray_scale = cv2.cvtColor(converted_img, cv2.COLOR_RGB2GRAY)
-            inv_gray = 255 - gray_scale
-            blur_image = cv2.GaussianBlur(inv_gray, (125,125), 0, 0)
-            sketch = cv2.divide(gray_scale, 255 - blur_image, scale=256)
-            st.image(sketch, width=500)
+            if option == 'Sketch 1':
+                imageArray = np.array(image)
+                custom_sketch_image = sketch_img(imageArray)
+                st.image(custom_sketch_image,caption=f"Sketch Image",width=500)
+            elif option == 'Sketch 2':
+                converted_img = np.array(image.convert('RGB')) 
+                gray_scale = cv2.cvtColor(converted_img, cv2.COLOR_RGB2GRAY)
+                inv_gray = 255 - gray_scale
+                blur_image = cv2.GaussianBlur(inv_gray, (125,125), 0, 0)
+                sketch = cv2.divide(gray_scale, 255 - blur_image, scale=256)
+                st.image(sketch, width=500)
+            elif option == 'Cartoon':
+                imageArray = np.array(image)
+                custom_cartonized_image = cartoonize_image(imageArray)
+                st.image(custom_cartonized_image,caption=f"Cartoonized Image",width=500)
+            elif option == 'Cartoon Grey':
+                imageArray = np.array(image)
+                custom_cartonized_image_gray = cartoonize_image(imageArray, True)
+                st.image(custom_cartonized_image_gray,caption=f"Cartoonized Image Gray",width=500)
+            elif option == 'PencilSketch Color': 
+                imageArray = np.array(image)
+                sketch_gray, sketch_color = cv2.pencilSketch(imageArray, sigma_s=30, sigma_r=0.1, shade_factor=0.1)
+                st.image(sketch_color,caption=f"Pencil Sketch Color",width=500)
+            elif option == 'PencilSketch Gray': 
+                imageArray = np.array(image) 
+                sketch_gray, sketch_color = cv2.pencilSketch(imageArray, sigma_s=30, sigma_r=0.1, shade_factor=0.1)
+                st.image(sketch_gray,caption=f"Pencil Sketch Gray",width=500)
+            elif option == 'Stylized Image':
+                imageArray = np.array(image)
+                stylizated_image = cv2.stylization(imageArray, sigma_s=60, sigma_r=0.07)
+                st.image(stylizated_image,caption=f"Stylized",width=500)
 elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
