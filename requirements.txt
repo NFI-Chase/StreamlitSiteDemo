@@ -1,4 +1,5 @@
 streamlit_book
 streamlit_option_menu
-opencv-python
+#opencv-python
+opencv-python-headless
 numpy
