@@ -1,0 +1,54 @@
+#MainMenu {visibility: hidden;}
+/*footer {visibility: hidden;}*/
+p {
+    color: #FFFFFF; 
+    font-size:13px;
+}
+.stButton>button {
+    color: #015249;
+    border-radius: 50%;
+    height: 3em;
+    width: 5em;
+}
+
+.stTextInput>div>div>input {
+    color: #FFFFFF;
+}
+
+.fontPageHeadings {
+    font-size:26px; 
+    color: #015249;
+}
+.fontPageText {
+    font-size:13px; 
+    color: #FFFFFF;
+}
+
+a:link , a:visited {
+    color: #015249;
+    background-color: transparent;
+    text-decoration: underline;
+}
+    
+a:hover {
+    color: red;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+a:active {
+    color: #015249;
+    background-color: transparent;
+    text-decoration: underline;
+}
+    
+.footer {
+    font-size:10px;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #0E1117;
+    color: white;
+    text-align: center;
+}
