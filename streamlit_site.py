@@ -5,6 +5,10 @@ import streamlit.components.v1 as html
 from  PIL import Image
 import numpy as np
 import cv2
+import pandas as pd
+from st_aggrid import AgGrid
+import plotly.express as px
+import io
 
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
@@ -44,11 +48,10 @@ def cartoonize_image(img, gray_mode = False):
     return cartoonized
 
 with st.sidebar:
-    choose = option_menu("Apps", ["Photo Editing", "Project Planning", "Screen Interactions", "About", "Contact"],
+    choose = option_menu("Apps", ["Photo Editing", "Project Planning", "QR Generator", "About", "Contact"],
         icons=[ 'camera fill', 'kanban', 'calculator','info-square','envelope'],
         menu_icon="terminal", default_index=0,orientation="vertical",
-        styles={
-            "container": {"padding": "5!important", "background-color": "#262730"},
+        styles={"container": {"padding": "5!important", "background-color": "#262730"},
             "icon": {"color": "#77C9D4", "font-size": "18px"}, 
             "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#A5A5AF"},
             "nav-link-selected": {"background-color": "#015249"}}
@@ -60,10 +63,7 @@ profile = Image.open(r'resources/addYourImage.png')
 if choose == "Photo Editing":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
-        st.markdown(""" <style> .font {
-        font-size:35px ; font-family: 'Bradley Hand'; color: #015249;} 
-        </style> """, unsafe_allow_html=True)
-        st.markdown('<p class="font">Upload your photo here...</p>', unsafe_allow_html=True)
+        st.markdown('<p class="fontPageHeadings">Upload your photo here...</p>', unsafe_allow_html=True)
         
     with col2:               # To display brand logo
         st.image(logo,  width=200)
@@ -128,6 +128,51 @@ if choose == "Photo Editing":
             #     imageArray = np.array(image)
             #     stylizated_image = cv2.stylization(imageArray, sigma_s=60, sigma_r=0.07)
             #     st.image(stylizated_image,caption=f"Stylized",width=500)
+elif choose == "Project Planning":
+    st.markdown('<p class="fontPageHeadings">Upload your project plan file and generate Gantt chart</p>', unsafe_allow_html=True)
+    st.markdown('<p class="title3">Step 1: Download the project plan template</p>', unsafe_allow_html=True)
+    image = Image.open(r'resources/template_picture.png')
+    st.image(image,  caption='Example of how the file should be completed')
+    @st.cache
+    def convert_df(df):
+        return df.to_csv().encode('utf-8')
+    df=pd.read_csv(r'resources/Project_Template.csv')
+    csv = convert_df(df)
+    st.download_button(label="Download Template", data=csv, file_name='Project_Template.csv', mime='text/csv',)
+    #Add a file uploader to allow users to upload their project plan file
+    st.markdown('<p class="title3">Step 2: Upload your project plan</p>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Fill out the project plan template and upload your file here. After you upload the file, you can edit your project plan within the app.", type=['csv'], key="2")
+    if uploaded_file is not None:
+        Tasks=pd.read_csv(uploaded_file)
+        Tasks['Start'] = Tasks['Start'].astype('datetime64')
+        Tasks['Finish'] = Tasks['Finish'].astype('datetime64')
+        grid_response = AgGrid(Tasks, editable=True, height=300, width='100%',)
+        updated = grid_response['data']
+        df = pd.DataFrame(updated) 
+        if st.button('Generate Gantt Chart'): 
+            fig = px.timeline(df, x_start="Start", x_end="Finish", y="Task", color='Completion Pct', hover_name="Task Description")
+            fig.update_yaxes(autorange="reversed")          #if not specified as 'reversed', the tasks will be listed from bottom up       
+            fig.update_layout(title='Project Plan Gantt Chart',
+                            hoverlabel_bgcolor='#DAEEED',   #Change the hover tooltip background color to a universal light blue color. If not specified, the background color will vary by team or completion pct, depending on what view the user chooses
+                            bargap=0.2, height=600, xaxis_title="", yaxis_title="",                   
+                            title_x=0.5,                    #Make title centered                     
+                            xaxis=dict(tickfont_size=15, tickangle = 270, rangeslider_visible=True,
+                                    side ="top",            #Place the tick labels on the top of the chart
+                                    showgrid = True, zeroline = True, showline = True, showticklabels = True,
+                                    tickformat="%x\n",      #Display the tick labels in certain format. To learn more about different formats, visit: https://github.com/d3/d3-format/blob/main/README.md#locale_format
+                                    )
+                        )
+            fig.update_xaxes(tickangle=0, tickfont=dict(family='Rockwell', color='blue', size=15))
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('<p class="title3">Step 3 : Export Interactive Gantt chart to HTML</p>', unsafe_allow_html=True) #Allow users to export the Plotly chart to HTML
+            buffer = io.StringIO()
+            fig.write_html(buffer, include_plotlyjs='cdn')
+            html_bytes = buffer.getvalue().encode()
+            st.download_button(label='Export to HTML', data=html_bytes, file_name=uploaded_file.name + '.html', mime='text/html' ) 
+        else:
+            st.write('---')
+elif choose == "QR Generator":
+    st.write('TODO')
 elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style

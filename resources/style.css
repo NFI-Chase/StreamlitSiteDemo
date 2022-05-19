@@ -4,16 +4,60 @@ p {
     color: #FFFFFF; 
     font-size:13px;
 }
+
+.title1 {
+    color: #FFFFFF; 
+    font-size:22px;
+}
+
+.title2 {
+    color: #FFFFFF; 
+    font-size:17px;
+}
+
+.title3 {
+    color: #FFFFFF; 
+    font-size:15px;
+    font-weight:bold
+}
 .stButton>button {
     color: #015249;
     border-radius: 50%;
-    height: 2em;
-    width: 5em;
+    /* height: 2em;
+    width: 5em; */
 }
 
+.stDownloadButton>button {
+    color: #015249;
+    border-radius: 50%;
+    /* height: 2em;
+    width: 5em; */
+}
 .stTextInput>div>div>input {
     font-size:13px;
     color: #FFFFFF;
+}
+
+.stTextInput>label {
+    font-size:13px;
+    color: #FFFFFF;
+    font-weight:bold
+}
+
+.stMultiSelect>label{
+    font-size:13px;
+    color: #FFFFFF;
+}
+
+.stSelectbox>label{
+    font-size:13px;
+    color: #FFFFFF;
+    font-weight:bold
+}
+
+stFileUploader>label{
+    font-size:13px;
+    color: #FFFFFF; 
 }
 
 .fontPageHeadings {

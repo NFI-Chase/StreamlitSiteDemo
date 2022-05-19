@@ -3,3 +3,7 @@ streamlit_option_menu
 #opencv-python
 opencv-python-headless
 numpy
+pandas
+st_aggrid
+plotly.express
+io
