@@ -4,6 +4,6 @@ streamlit_option_menu
 opencv-python-headless
 numpy
 pandas
-st_aggrid
-plotly.express
+streamlit-aggrid
+plotly_express==0.4.0
 io
