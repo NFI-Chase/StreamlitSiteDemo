@@ -70,7 +70,7 @@ if choose == "Photo Editing":
         
     #Add file uploader to allow users to upload photos
     uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
-    option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Cartoon', 'Cartoon Grey', 'PencilSketch Color', 'PencilSketch Gray','Stylized Image'))
+    option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Grey', 'Cartoon', 'Cartoon Grey', 'PencilSketch Color', 'PencilSketch Gray','Stylized Image'))
     if uploaded_file is not None and option != '':
         image = Image.open(uploaded_file)
         
@@ -91,6 +91,10 @@ if choose == "Photo Editing":
                 blur_image = cv2.GaussianBlur(inv_gray, (125,125), 0, 0)
                 sketch = cv2.divide(gray_scale, 255 - blur_image, scale=256)
                 st.image(sketch, width=500)
+            elif option == 'Grey':
+                converted_img = np.array(image.convert('RGB'))
+                grey_img=cv2.cvtColor(converted_img, cv2.COLOR_BGR2GRAY)
+                st.image(grey_img,caption=f"Grey",width=500)
             elif option == 'Cartoon':
                 imageArray = np.array(image)
                 custom_cartonized_image = cartoonize_image(imageArray)
