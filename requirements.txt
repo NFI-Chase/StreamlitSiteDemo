@@ -1,2 +1,4 @@
 streamlit_book
 streamlit_option_menu
+cv2
+numpy

@@ -3,6 +3,8 @@ import streamlit_book as stb
 from streamlit_option_menu import option_menu
 import streamlit.components.v1 as html
 from  PIL import Image
+import numpy as np
+import cv2
 
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
@@ -16,7 +18,10 @@ def icon(icon_name):
     st.markdown(f'<i class="material-icons">{icon_name}</i>', unsafe_allow_html=True)
 local_css("resources/style.css")
 remote_css('https://fonts.googleapis.com/icon?family=Material+Icons')
-
+def clear_form():
+    st.session_state["customerFeedbackName"] = ""
+    st.session_state["customerFeedbackEmail"] = ""
+    st.session_state["customerFeedbackMessage"] = ""
 with st.sidebar:
     choose = option_menu("Apps", ["Photo Editing", "Project Planning", "Screen Interactions", "About", "Contact"],
         icons=[ 'camera fill', 'kanban', 'calculator','info-square','envelope'],
@@ -27,15 +32,46 @@ with st.sidebar:
             "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#A5A5AF"},
             "nav-link-selected": {"background-color": "#015249"}}
     )
+    footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
+    st.markdown(footer,unsafe_allow_html=True)
 logo = Image.open(r'resources/addYourImage.png')
 profile = Image.open(r'resources/addYourImage.png')
-if choose == "About":
+if choose == "Photo Editing":
+    col1, col2 = st.columns( [0.8, 0.2])
+    with col1:               # To display the header text using css style
+        st.markdown(""" <style> .font {
+        font-size:35px ; font-family: 'Bradley Hand'; color: #015249;} 
+        </style> """, unsafe_allow_html=True)
+        st.markdown('<p class="font">Upload your photo here...</p>', unsafe_allow_html=True)
+        
+    with col2:               # To display brand logo
+        st.image(logo,  width=200)
+        
+    #Add file uploader to allow users to upload photos
+    uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        
+        col1, col2 = st.columns( [0.5, 0.5])
+        with col1:
+            st.markdown('<p style="text-align: center;">Before</p>',unsafe_allow_html=True)
+            st.image(image,width=500)  
+
+        with col2:
+            st.markdown('<p style="text-align: center;">After</p>',unsafe_allow_html=True)
+
+            converted_img = np.array(image.convert('RGB')) 
+            gray_scale = cv2.cvtColor(converted_img, cv2.COLOR_RGB2GRAY)
+            inv_gray = 255 - gray_scale
+            blur_image = cv2.GaussianBlur(inv_gray, (125,125), 0, 0)
+            sketch = cv2.divide(gray_scale, 255 - blur_image, scale=256)
+            st.image(sketch, width=500)
+elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
         st.markdown('<p class="fontPageHeadings">About the Creator</p>', unsafe_allow_html=True)    
     with col2:               # To display brand log
         st.image(logo, width=200 )
-    
     st.markdown('<p>Michael Strydom is a Integration Specialist, architect and coding enthusiast.</p>', unsafe_allow_html=True) 
     st.markdown('<p>✔ From South Africa.</br> ✔ Age : How old do you want me to be.</br> ✔ Married to the most beautiful woman alive</br> ✔ Studied at University of Johannesburg</br> ✔ Graduated in BSc. Informatics and Computer Science with Endorsed Mathematics</p>', unsafe_allow_html=True)   
     st.image(profile, width=300 )
@@ -43,12 +79,18 @@ elif choose == "Contact":
     st.markdown('<p class="fontPageHeadings">Contact Form</p>', unsafe_allow_html=True)
     with st.form(key='columns_in_form2',clear_on_submit=True): #set clear_on_submit=True so that the form will be reset/cleared once it's submitted
         #st.write('Please help us improve!')
-        Name=st.text_input(label='Please Enter Your Name')
-        Email=st.text_input(label='Please Enter Email')
-        Message=st.text_input(label='Please Enter Your Message')
-        submitted = st.form_submit_button('Submit')
+        Name=st.text_input(label='Please Enter Your Name', key="customerFeedbackName")
+        Email=st.text_input(label='Please Enter Email', key="customerFeedbackEmail")
+        Message=st.text_input(label='Please Enter Your Message', key="customerFeedbackMessage")
+        col1, col2 = st.columns([1,1])
+        with col1:
+            cleared = st.form_submit_button(label='Clear', on_click=clear_form)
+        with col2:
+            submitted = st.form_submit_button('Submit')
         if submitted:
-            st.markdown('<p>Thanks for your contacting us. We will respond to your questions or inquiries as soon as possible!</p>', unsafe_allow_html=True)
-    
-footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
-st.markdown(footer,unsafe_allow_html=True)
+            st.info('Thanks for your contacting us. We will respond to your questions or inquiries as soon as possible!')
+            st.balloons()
+        if cleared:
+            st.info('Form Cleared')
+# footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
+# st.markdown(footer,unsafe_allow_html=True)

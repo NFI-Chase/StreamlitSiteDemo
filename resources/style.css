@@ -7,11 +7,12 @@ p {
 .stButton>button {
     color: #015249;
     border-radius: 50%;
-    height: 3em;
+    height: 2em;
     width: 5em;
 }
 
 .stTextInput>div>div>input {
+    font-size:13px;
     color: #FFFFFF;
 }
 
