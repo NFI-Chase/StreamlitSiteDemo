@@ -5,5 +5,5 @@ opencv-python-headless
 numpy
 pandas
 streamlit-aggrid
-plotly_express==0.4.0
+plotly_express
 io
