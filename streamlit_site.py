@@ -131,12 +131,12 @@ if choose == "Photo Editing":
 elif choose == "Project Planning":
     st.markdown('<p class="fontPageHeadings">Upload your project plan file and generate Gantt chart</p>', unsafe_allow_html=True)
     st.markdown('<p class="title3">Step 1: Download the project plan template</p>', unsafe_allow_html=True)
-    image = Image.open(r'resources/template_picture.png')
+    image = Image.open(r'resources/templatePicture.png')
     st.image(image,  caption='Example of how the file should be completed')
     @st.cache
     def convert_df(df):
         return df.to_csv().encode('utf-8')
-    df=pd.read_csv(r'resources/Project_Template.csv')
+    df=pd.read_csv(r'resources/projectTemplate.csv')
     csv = convert_df(df)
     st.download_button(label="Download Template", data=csv, file_name='Project_Template.csv', mime='text/csv',)
     #Add a file uploader to allow users to upload their project plan file
