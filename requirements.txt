@@ -6,6 +6,5 @@ numpy
 pandas
 streamlit-aggrid
 plotly_express
-BytesIO
 imageio
 amzqr
