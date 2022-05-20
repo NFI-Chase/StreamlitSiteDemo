@@ -2,13 +2,17 @@ import streamlit as st
 import streamlit_book as stb
 from streamlit_option_menu import option_menu
 import streamlit.components.v1 as html
-from  PIL import Image
+from  PIL import Image, ImageSequence
 import numpy as np
 import cv2
 import pandas as pd
 from st_aggrid import AgGrid
 import plotly.express as px
 import io
+import imageio
+import base64,os
+from io import BytesIO
+from amzqr import amzqr
 
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
@@ -46,9 +50,27 @@ def cartoonize_image(img, gray_mode = False):
     if gray_mode:
         return cv2.cvtColor(cartoonized, cv2.COLOR_BGR2GRAY)
     return cartoonized
-
+def remake_qrcode(qr_img):
+        crop_size = 27
+        new_img = qr_img.crop((crop_size, crop_size, qr_img.size[0] - crop_size, qr_img.size[1] - crop_size)) 
+        return new_img
+def load_qrcode_to_base64(qrLoad, format):
+    buf = BytesIO()
+    if format == 'jpg':
+        crop_size = 27
+        qrLoad = qrLoad.crop((crop_size, crop_size, qrLoad.size[0] - crop_size, qrLoad.size[1] - crop_size)) 
+        qrLoad.save(buf, format = 'JPG')
+        base64_str = f'base64://{base64.b64encode(buf.getvalue()).decode()}'
+        return base64_str
+    elif format == 'gif':
+        info = qrLoad.info
+        sequence = [remake_qrcode(f.copy()) for f in ImageSequence.Iterator(qrLoad)]
+        sequence[0].save(buf, format='GIF', save_all=True,append_images=sequence[1:], disposal=2,quality=100, **info)
+        # base64_str =  f'base64://{base64.b64encode(buf.getvalue()).decode()}'
+        url_data = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return url_data, buf.getvalue()
 with st.sidebar:
-    choose = option_menu("Apps", ["Photo Editing", "Project Planning", "QR Generator", "About", "Contact"],
+    choose = option_menu("Apps", ["Photo Editor", "Project Planning", "QR Generator", "About", "Contact"],
         icons=[ 'camera fill', 'kanban', 'calculator','info-square','envelope'],
         menu_icon="terminal", default_index=0,orientation="vertical",
         styles={"container": {"padding": "5!important", "background-color": "#262730"},
@@ -60,20 +82,13 @@ with st.sidebar:
     st.markdown(footer,unsafe_allow_html=True)
 logo = Image.open(r'resources/addYourImage.png')
 profile = Image.open(r'resources/addYourImage.png')
-if choose == "Photo Editing":
-    col1, col2 = st.columns( [0.8, 0.2])
-    with col1:               # To display the header text using css style
-        st.markdown('<p class="fontPageHeadings">Upload your photo here...</p>', unsafe_allow_html=True)
-        
-    with col2:               # To display brand logo
-        st.image(logo,  width=200)
-        
+if choose == "Photo Editor":
+    st.markdown('<p class="fontPageHeadings">Photo Editor</p>', unsafe_allow_html=True)
     #Add file uploader to allow users to upload photos
     uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
     option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Sketch 3', 'Grey', 'Invert', 'Cartoon', 'Cartoon Grey', 'PencilSketch Color', 'PencilSketch Gray','Stylized Image'))
     if uploaded_file is not None and option != '':
         image = Image.open(uploaded_file)
-        
         col1, col2 = st.columns( [0.5, 0.5])
         with col1:
             st.markdown('<p style="text-align: center;">Before</p>',unsafe_allow_html=True)
@@ -172,7 +187,49 @@ elif choose == "Project Planning":
         else:
             st.write('---')
 elif choose == "QR Generator":
-    st.write('TODO')
+    st.markdown('<p class="fontPageHeadings">QR Code Generator</p>', unsafe_allow_html=True)
+    uploaded_files = st.file_uploader("",accept_multiple_files=True, type=['jpg','png','jpeg'])
+    col1, col2 = st.columns( [0.5, 0.5])
+    with col1:
+        gif_qr_size=st.text_input(label='Please Enter the size of Image (default: 100):', key="qrSize")
+        gif_transition_duration=st.text_input(label='GIF transition duration (default: 0.30):', key="gifTrasitionDuration")
+    with col2:
+        qr_type = st.selectbox('QR Code Type',('','Automation Color', 'Automation BW', 'Plain QR'))
+        qr_version = st.selectbox('QR Code Version',(1,2,3,4,5,6))
+        qr_destination_link=st.text_input(label='QR Data:', key="qrDestinationLink")
+    images = []
+    for uploaded_file in uploaded_files:
+        image = Image.open(uploaded_file)
+        image = image.resize((250,250))
+        images.append(image)
+    if images:
+        col1, col2 = st.columns( [0.5, 0.5])
+        with col1:
+            #do GIF  
+            st.markdown('<p class="title3">GIF Result</p>', unsafe_allow_html=True)  
+            output = io.BytesIO()
+            imageio.mimwrite(output, images, "gif", duration=0.30)
+            data_url = base64.b64encode(output.getvalue()).decode("utf-8")
+            imageio.mimsave('gifResult.gif', images, duration=0.30)
+            st.markdown(f'</br> <img src="data:image/gif;base64,{data_url}" alt="Output GIF">',unsafe_allow_html=True,)
+            st.download_button(label='Download GIF', data=output, file_name='gifResult.gif', mime='image/gif' )
+        with col2:
+            #do QR
+            saved_qr_name = 'tempQR.gif'
+            st.markdown('<p class="title3">QR Code Result</p>', unsafe_allow_html=True)
+            if qr_type == 'Automation Color' and qr_destination_link and qr_version:
+                version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=True,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
+                qrLoad = Image.open(saved_qr_name)
+                data_url, data = load_qrcode_to_base64(qrLoad, 'gif')
+                st.markdown(f'</br> <img src="data:image/gif;base64,{data_url}" alt="Output QR">',unsafe_allow_html=True,)
+                st.download_button(label='Download QR Code', data=data, file_name='qrCodeResult.gif', mime='image/gif' )
+            elif qr_type == 'Automation BW' and qr_destination_link and qr_version:
+                version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=False,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
+            elif qr_type == 'Plain QR'and qr_destination_link:
+                version, level, qr_name = amzqr.run(words=qr_destination_link,save_name=saved_qr_name,)
+            os.remove('gifResult.gif')
+            qrLoad.close()
+            os.remove(saved_qr_name)
 elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
