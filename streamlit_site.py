@@ -13,6 +13,8 @@ import imageio
 import base64,os
 from io import BytesIO
 from amzqr import amzqr
+import time
+import random
 
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
@@ -70,8 +72,8 @@ def load_qrcode_to_base64(qrLoad, format):
         url_data = base64.b64encode(buf.getvalue()).decode("utf-8")
         return url_data, buf.getvalue()
 with st.sidebar:
-    choose = option_menu("Apps", ["Photo Editor", "Project Planning", "QR Generator", "About", "Contact"],
-        icons=[ 'camera fill', 'kanban', 'calculator','info-square','envelope'],
+    choose = option_menu("Apps", ["Home","Photo Editor", "Project Planning", "QR Generator","Graphs", "About", "Contact", "Admin", "Additional"],
+        icons=[ 'house','camera fill', 'kanban', 'calculator', 'bar-chart-steps','info-square','envelope','box-arrow-in-right','cloud-plus'],
         menu_icon="terminal", default_index=0,orientation="vertical",
         styles={"container": {"padding": "5!important", "background-color": "#262730"},
             "icon": {"color": "#77C9D4", "font-size": "18px"}, 
@@ -82,7 +84,136 @@ with st.sidebar:
     st.markdown(footer,unsafe_allow_html=True)
 logo = Image.open(r'resources/addYourImage.png')
 profile = Image.open(r'resources/addYourImage.png')
-if choose == "Photo Editor":
+if choose == "Home":
+    st.markdown('<p class="fontPageHeadings">Home</p>', unsafe_allow_html=True)
+    url = "https://www.youtube.com/watch?v=0ESc1bh3eIg"
+    col1, col2, col3 = st.columns( [0.5, 0.5,0.5])
+    with col1:
+        st.write("")
+    with col2:
+        st.video(url)
+    with col3:
+        st.write("")  
+    def init(post_init=False):
+        if not post_init:
+            st.session_state.opponent = 'Human'
+            st.session_state.win = {'X': 0, 'O': 0}
+        st.session_state.board = np.full((3, 3), '.', dtype=str)
+        st.session_state.player = 'X'
+        st.session_state.warning = False
+        st.session_state.winner = None
+        st.session_state.over = False
+
+
+    def check_available_moves(extra=False) -> list:
+        raw_moves = [row for col in st.session_state.board.tolist() for row in col]
+        num_moves = [i for i, spot in enumerate(raw_moves) if spot == '.']
+        if extra:
+            return [(i // 3, i % 3) for i in num_moves]
+        return num_moves
+
+
+    def check_rows(board):
+        for row in board:
+            if len(set(row)) == 1:
+                return row[0]
+        return None
+
+
+    def check_diagonals(board):
+        if len(set([board[i][i] for i in range(len(board))])) == 1:
+            return board[0][0]
+        if len(set([board[i][len(board) - i - 1] for i in range(len(board))])) == 1:
+            return board[0][len(board) - 1]
+        return None
+
+
+    def check_state():
+        if st.session_state.winner:
+            st.success(f"Congrats! {st.session_state.winner} won the game! 🎈")
+        if st.session_state.warning and not st.session_state.over:
+            st.warning('⚠️ This move already exist')
+        if st.session_state.winner and not st.session_state.over:
+            st.session_state.over = True
+            st.session_state.win[st.session_state.winner] = (
+                st.session_state.win.get(st.session_state.winner, 0) + 1
+            )
+        elif not check_available_moves() and not st.session_state.winner:
+            st.info(f'It\'s a tie 📍')
+            st.session_state.over = True
+
+
+    def check_win(board):
+        for new_board in [board, np.transpose(board)]:
+            result = check_rows(new_board)
+            if result:
+                return result
+        return check_diagonals(board)
+
+
+    def computer_player():
+        moves = check_available_moves(extra=True)
+        if moves:
+            i, j = random.choice(moves)
+            handle_click(i, j)
+
+
+    def handle_click(i, j):
+        if (i, j) not in check_available_moves(extra=True):
+            st.session_state.warning = True
+        elif not st.session_state.winner:
+            st.session_state.warning = False
+            st.session_state.board[i, j] = st.session_state.player
+            st.session_state.player = "O" if st.session_state.player == "X" else "X"
+            winner = check_win(st.session_state.board)
+            if winner != ".":
+                st.session_state.winner = winner
+
+    def main():
+        st.write(
+            """
+            # ❎🅾️ Tic Tac Toe
+            """
+        )
+        if "board" not in st.session_state:
+            init()
+        reset, score, player, settings = st.columns([0.5, 0.6, 1, 1])
+        reset.button('New game', on_click=init, args=(True,))
+
+        with settings.expander('Settings'):
+            st.write('**Warning**: changing this setting will restart your game')
+            st.selectbox(
+                'Set opponent',
+                ['Human', 'Computer'],
+                key='opponent',
+                on_change=init,
+                args=(True,),
+            )
+
+        for i, row in enumerate(st.session_state.board):
+            cols = st.columns([5, 1, 1, 1, 5])
+            for j, field in enumerate(row):
+                cols[j + 1].button(
+                    field,
+                    key=f"{i}-{j}",
+                    on_click=handle_click
+                    if st.session_state.player == 'X'
+                    or st.session_state.opponent == 'Human'
+                    else computer_player(),
+                    args=(i, j),
+                )
+
+        check_state()
+
+        score.button(f'❌{st.session_state.win["X"]} 🆚 {st.session_state.win["O"]}⭕')
+        player.button(
+            f'{"❌" if st.session_state.player == "X" else "⭕"}\'s turn'
+            if not st.session_state.winner
+            else f'🏁 Game finished'
+        )
+    if __name__ == '__main__':
+        main()  
+elif choose == "Photo Editor":
     st.markdown('<p class="fontPageHeadings">Photo Editor</p>', unsafe_allow_html=True)
     #Add file uploader to allow users to upload photos
     uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
@@ -177,7 +308,7 @@ elif choose == "Project Planning":
                                     tickformat="%x\n",      #Display the tick labels in certain format. To learn more about different formats, visit: https://github.com/d3/d3-format/blob/main/README.md#locale_format
                                     )
                         )
-            fig.update_xaxes(tickangle=0, tickfont=dict(family='Rockwell', color='blue', size=15))
+            fig.update_xaxes(tickangle=0, tickfont=dict(family='Rockwell', color='#77C9D4', size=13))
             st.plotly_chart(fig, use_container_width=True)
             st.markdown('<p class="title3">Step 3 : Export Interactive Gantt chart to HTML</p>', unsafe_allow_html=True) #Allow users to export the Plotly chart to HTML
             buffer = io.StringIO()
@@ -230,6 +361,8 @@ elif choose == "QR Generator":
             os.remove('gifResult.gif')
             qrLoad.close()
             os.remove(saved_qr_name)
+elif choose == "Graphs":
+    st.write('TODO')    
 elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
@@ -256,5 +389,446 @@ elif choose == "Contact":
             st.balloons()
         if cleared:
             st.info('Form Cleared')
+elif choose == "Admin":
+    def loginPage():
+        users = {"test":"test"}
+        st.markdown("<p>ADMIN Login:</p>", unsafe_allow_html=True)
+        with st.form(key='login_form'):
+            if "username" not in st.session_state:
+                email = st.text_input("Username or e-mail")
+                password = st.text_input("Password", type="password")
+            submit_button = st.form_submit_button(label="Submit")
+
+        if submit_button:
+            if email.lower() in users and users[email.lower()] == password:
+                st.success("Succesfully logged in! :tada:")
+                st.session_state.logged_in = True
+                with st.spinner("Redirecting to application..."):
+                        time.sleep(1)
+                        st.experimental_rerun()
+    if "logged_in" in st.session_state and st.session_state.logged_in == True:
+        if st.button('Logout', key='adminLogout'):
+            st.session_state.logged_in = False
+            st.legacy_caching.clear_cache()
+            st.experimental_rerun()
+        def _tabs(tabs_data = {}, default_active_tab=0):
+            tab_titles = list(tabs_data.keys())
+            if not tab_titles:
+                return None
+            active_tab = st.radio("", tab_titles, index=default_active_tab)
+            child = tab_titles.index(active_tab)+1
+            st.markdown("""  
+                <style type="text/css">
+                div[role=radiogroup] > label > div:first-of-type {
+                display: none
+                }
+                div[role=radiogroup] {
+                    flex-direction: unset
+                }
+                div[role=radiogroup] label {             
+                    border: 1px solid #black;
+                    background: black;
+                    padding: 4px 12px;
+                    border-radius: 4px 4px 0 0;
+                    position: relative;
+                    top: 1px;
+                    }
+                div[role=radiogroup] label:nth-child(""" + str(child) + """) {    
+                    background: #77C9D4 !important;
+                    border-bottom: 1px solid transparent;
+                }            
+                </style>
+            """,unsafe_allow_html=True)        
+            return tabs_data[active_tab]
+
+        def _show_video():
+            st.title("Russia – Ukraine conflict / crisis Explained")
+            st.video("https://www.youtube.com/watch?v=h2P9AmGcMdM")
+
+        def _fake_df():
+            N = 50
+            rand = pd.DataFrame()
+            rand['a'] = np.arange(N)
+            rand['b'] = np.random.rand(N)
+            rand['c'] = np.random.rand(N)    
+            return rand
+
+        def do_tabs():
+            st.markdown("Welcome User")
+            tab_content = _tabs({
+                    "Tab html": "<h2> Hello Streamlit, <br/> what a cool tool! </h2>",
+                    "Tab video": _show_video, 
+                    "Tab df": _fake_df()
+                })
+            if callable(tab_content):
+                tab_content()
+            elif type(tab_content) == str:
+                st.markdown(tab_content, unsafe_allow_html=True)
+            else:
+                st.write(tab_content)
+        do_tabs()
+    if "logged_in" not in st.session_state:
+        loginPage()
+    if "logged_in" in st.session_state and st.session_state.logged_in == False:
+        loginPage() 
+elif choose == "Additional":
+    st.markdown('<p class="fontPageHeadings">Additional Projects</p>', unsafe_allow_html=True)
+    link='Code Gallery [link](https://streamlit.io/gallery)'
+    st.markdown(link,unsafe_allow_html=True)
+    link='Bug Report [link](https://share.streamlit.io/streamlit/example-app-bug-report/main) Github [link](https://github.com/streamlit/example-app-bug-report)'
+    st.markdown(link,unsafe_allow_html=True)
+    code = '''# Bug Report
+        import google_auth_httplib2
+        import httplib2
+        import pandas as pd
+        import streamlit as st
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        from googleapiclient.http import HttpRequest
+
+        SCOPE = "https://www.googleapis.com/auth/spreadsheets"
+        SPREADSHEET_ID = "1QlPTiVvfRM82snGN6LELpNkOwVI1_Mp9J9xeJe-QoaA"
+        SHEET_NAME = "Database"
+        GSHEET_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}"
+
+
+        @st.experimental_singleton()
+        def connect_to_gsheet():
+            # Create a connection object.
+            credentials = service_account.Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"],
+                scopes=[SCOPE],
+            )
+
+            # Create a new Http() object for every request
+            def build_request(http, *args, **kwargs):
+                new_http = google_auth_httplib2.AuthorizedHttp(
+                    credentials, http=httplib2.Http()
+                )
+                return HttpRequest(new_http, *args, **kwargs)
+
+            authorized_http = google_auth_httplib2.AuthorizedHttp(
+                credentials, http=httplib2.Http()
+            )
+            service = build(
+                "sheets",
+                "v4",
+                requestBuilder=build_request,
+                http=authorized_http,
+            )
+            gsheet_connector = service.spreadsheets()
+            return gsheet_connector
+
+
+        def get_data(gsheet_connector) -> pd.DataFrame:
+            values = (
+                gsheet_connector.values()
+                .get(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=f"{SHEET_NAME}!A:E",
+                )
+                .execute()
+            )
+
+            df = pd.DataFrame(values["values"])
+            df.columns = df.iloc[0]
+            df = df[1:]
+            return df
+
+
+        def add_row_to_gsheet(gsheet_connector, row) -> None:
+            gsheet_connector.values().append(
+                spreadsheetId=SPREADSHEET_ID,
+                range=f"{SHEET_NAME}!A:E",
+                body=dict(values=row),
+                valueInputOption="USER_ENTERED",
+            ).execute()
+
+
+        st.set_page_config(page_title="Bug report", page_icon="🐞", layout="centered")
+
+        st.title("🐞 Bug report!")
+
+        gsheet_connector = connect_to_gsheet()
+
+        st.sidebar.write(
+            f"This app shows how a Streamlit app can interact easily with a [Google Sheet]({GSHEET_URL}) to read or store data."
+        )
+
+        st.sidebar.write(
+            f"[Read more](https://docs.streamlit.io/knowledge-base/tutorials/databases/public-gsheet) about connecting your Streamlit app to Google Sheets."
+        )
+
+        form = st.form(key="annotation")
+
+        with form:
+            cols = st.columns((1, 1))
+            author = cols[0].text_input("Report author:")
+            bug_type = cols[1].selectbox(
+                "Bug type:", ["Front-end", "Back-end", "Data related", "404"], index=2
+            )
+            comment = st.text_area("Comment:")
+            cols = st.columns(2)
+            date = cols[0].date_input("Bug date occurrence:")
+            bug_severity = cols[1].slider("Bug severity:", 1, 5, 2)
+            submitted = st.form_submit_button(label="Submit")
+
+
+        if submitted:
+            add_row_to_gsheet(
+                gsheet_connector,
+                [[author, bug_type, comment, str(date), bug_severity]],
+            )
+            st.success("Thanks! Your bug was recorded.")
+            st.balloons()
+
+        expander = st.expander("See all records")
+        with expander:
+            st.write(f"Open original [Google Sheet]({GSHEET_URL})")
+            st.dataframe(get_data(gsheet_connector))'''   
+    st.code(code, language='python')
+    link='NYC Uber Ridesharing Data [link](https://share.streamlit.io/streamlit/demo-uber-nyc-pickups/main) Github [link](https://github.com/streamlit/demo-uber-nyc-pickups)'
+    st.markdown(link,unsafe_allow_html=True)
+    code = '''# -*- coding: utf-8 -*-
+        # Copyright 2018-2022 Streamlit Inc.
+        #
+        # Licensed under the Apache License, Version 2.0 (the "License");
+        # you may not use this file except in compliance with the License.
+        # You may obtain a copy of the License at
+        #
+        #    http://www.apache.org/licenses/LICENSE-2.0
+        #
+        # Unless required by applicable law or agreed to in writing, software
+        # distributed under the License is distributed on an "AS IS" BASIS,
+        # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        # See the License for the specific language governing permissions and
+        # limitations under the License.
+
+        """An example of showing geographic data."""
+
+        import streamlit as st
+        import pandas as pd
+        import numpy as np
+        import altair as alt
+        import pydeck as pdk
+
+        # SETTING PAGE CONFIG TO WIDE MODE AND ADDING A TITLE AND FAVICON
+        st.set_page_config(layout="wide", page_title="NYC Ridesharing Demo", page_icon=":taxi:")
+
+        # LOAD DATA ONCE
+        @st.experimental_singleton
+        def load_data():
+            data = pd.read_csv(
+                "uber-raw-data-sep14.csv.gz",
+                nrows=100000,  # approx. 10% of data
+                names=[
+                    "date/time",
+                    "lat",
+                    "lon",
+                ],  # specify names directly since they don't change
+                skiprows=1,  # don't read header since names specified directly
+                usecols=[0, 1, 2],  # doesn't load last column, constant value "B02512"
+                parse_dates=[
+                    "date/time"
+                ],  # set as datetime instead of converting after the fact
+            )
+
+            return data
+
+
+        # FUNCTION FOR AIRPORT MAPS
+        def map(data, lat, lon, zoom):
+            st.write(
+                pdk.Deck(
+                    map_style="mapbox://styles/mapbox/light-v9",
+                    initial_view_state={
+                        "latitude": lat,
+                        "longitude": lon,
+                        "zoom": zoom,
+                        "pitch": 50,
+                    },
+                    layers=[
+                        pdk.Layer(
+                            "HexagonLayer",
+                            data=data,
+                            get_position=["lon", "lat"],
+                            radius=100,
+                            elevation_scale=4,
+                            elevation_range=[0, 1000],
+                            pickable=True,
+                            extruded=True,
+                        ),
+                    ],
+                )
+            )
+
+
+        # FILTER DATA FOR A SPECIFIC HOUR, CACHE
+        @st.experimental_memo
+        def filterdata(df, hour_selected):
+            return df[df["date/time"].dt.hour == hour_selected]
+
+
+        # CALCULATE MIDPOINT FOR GIVEN SET OF DATA
+        @st.experimental_memo
+        def mpoint(lat, lon):
+            return (np.average(lat), np.average(lon))
+
+
+        # FILTER DATA BY HOUR
+        @st.experimental_memo
+        def histdata(df, hr):
+            filtered = data[
+                (df["date/time"].dt.hour >= hr) & (df["date/time"].dt.hour < (hr + 1))
+            ]
+
+            hist = np.histogram(filtered["date/time"].dt.minute, bins=60, range=(0, 60))[0]
+
+            return pd.DataFrame({"minute": range(60), "pickups": hist})
+
+
+        # STREAMLIT APP LAYOUT
+        data = load_data()
+
+        # LAYING OUT THE TOP SECTION OF THE APP
+        row1_1, row1_2 = st.columns((2, 3))
+
+        with row1_1:
+            st.title("NYC Uber Ridesharing Data")
+            hour_selected = st.slider("Select hour of pickup", 0, 23)
+
+        with row1_2:
+            st.write(
+                """
+            ##
+            Examining how Uber pickups vary over time in New York City's and at its major regional airports.
+            By sliding the slider on the left you can view different slices of time and explore different transportation trends.
+            """
+            )
+
+        # LAYING OUT THE MIDDLE SECTION OF THE APP WITH THE MAPS
+        row2_1, row2_2, row2_3, row2_4 = st.columns((2, 1, 1, 1))
+
+        # SETTING THE ZOOM LOCATIONS FOR THE AIRPORTS
+        la_guardia = [40.7900, -73.8700]
+        jfk = [40.6650, -73.7821]
+        newark = [40.7090, -74.1805]
+        zoom_level = 12
+        midpoint = mpoint(data["lat"], data["lon"])
+
+        with row2_1:
+            st.write(
+                f"""**All New York City from {hour_selected}:00 and {(hour_selected + 1) % 24}:00**"""
+            )
+            map(filterdata(data, hour_selected), midpoint[0], midpoint[1], 11)
+
+        with row2_2:
+            st.write("**La Guardia Airport**")
+            map(filterdata(data, hour_selected), la_guardia[0], la_guardia[1], zoom_level)
+
+        with row2_3:
+            st.write("**JFK Airport**")
+            map(filterdata(data, hour_selected), jfk[0], jfk[1], zoom_level)
+
+        with row2_4:
+            st.write("**Newark Airport**")
+            map(filterdata(data, hour_selected), newark[0], newark[1], zoom_level)
+
+        # CALCULATING DATA FOR THE HISTOGRAM
+        chart_data = histdata(data, hour_selected)
+
+        # LAYING OUT THE HISTOGRAM SECTION
+        st.write(
+            f"""**Breakdown of rides per minute between {hour_selected}:00 and {(hour_selected + 1) % 24}:00**"""
+        )
+
+        st.altair_chart(
+            alt.Chart(chart_data)
+            .mark_area(
+                interpolate="step-after",
+            )
+            .encode(
+                x=alt.X("minute:Q", scale=alt.Scale(nice=False)),
+                y=alt.Y("pickups:Q"),
+                tooltip=["minute", "pickups"],
+            )
+            .configure_mark(opacity=0.2, color="red"),
+            use_container_width=True,
+        )'''
+    st.code(code, language='python')
+    link='Diploma PDF Generator [link](https://share.streamlit.io/streamlit/example-app-pdf-report/main) Github [link](https://github.com/streamlit/example-app-pdf-report)'
+    st.markdown(link,unsafe_allow_html=True)
+    code = '''# Diploma PDF Generator
+        import pdfkit
+        from jinja2 import Environment, PackageLoader, select_autoescape, FileSystemLoader
+        from datetime import date
+        import streamlit as st
+        from streamlit.components.v1 import iframe
+
+        st.set_page_config(layout="centered", page_icon="🎓", page_title="Diploma Generator")
+        st.title("🎓 Diploma PDF Generator")
+
+        st.write(
+            "This app shows you how you can use Streamlit to make a PDF generator app in just a few lines of code!"
+        )
+
+        left, right = st.columns(2)
+
+        right.write("Here's the template we'll be using:")
+
+        right.image("template.png", width=300)
+
+        env = Environment(loader=FileSystemLoader("."), autoescape=select_autoescape())
+        template = env.get_template("template.html")
+
+
+        left.write("Fill in the data:")
+        form = left.form("template_form")
+        student = form.text_input("Student name")
+        course = form.selectbox(
+            "Choose course",
+            ["Report Generation in Streamlit", "Advanced Cryptography"],
+            index=0,
+        )
+        grade = form.slider("Grade", 1, 100, 60)
+        submit = form.form_submit_button("Generate PDF")
+
+        if submit:
+            html = template.render(
+                student=student,
+                course=course,
+                grade=f"{grade}/100",
+                date=date.today().strftime("%B %d, %Y"),
+            )
+
+            pdf = pdfkit.from_string(html, False)
+            st.balloons()
+
+            right.success("🎉 Your diploma was generated!")
+            # st.write(html, unsafe_allow_html=True)
+            # st.write("")
+            right.download_button(
+                "⬇️ Download PDF",
+                data=pdf,
+                file_name="diploma.pdf",
+                mime="application/octet-stream",
+            )'''
+    st.code(code, language='python')
+    link='JAVA: New Programming Jargon [link](https://blog.codinghorror.com/new-programming-jargon/)'
+    st.markdown(link,unsafe_allow_html=True)
+    code = '''//Finding a position to insert the numeric element in the array
+        import java.util.Arrays;
+        public class GFG {
+            public static void main(String[] args)
+            {
+                int[] arr = new int[] { 1, 3, 4, 5, 6 };
+        
+                // 2 has to be inserted
+                int pos = Arrays.binarySearch(arr, 2);
+                System.out.print("Element has to be inserted at: " + ~pos);
+            }
+        }'''
+    st.code(code, language='Java')
+
 # footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
 # st.markdown(footer,unsafe_allow_html=True)
