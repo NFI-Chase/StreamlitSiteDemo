@@ -8,3 +8,7 @@ streamlit-aggrid
 plotly_express
 imageio
 amzqr
+streamlit_quill
+streamlit_ace
+streamlit-folium
+stmol

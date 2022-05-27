@@ -15,7 +15,12 @@ from io import BytesIO
 from amzqr import amzqr
 import time
 import random
-
+from streamlit_quill import st_quill
+from streamlit_ace import st_ace, KEYBINDINGS, LANGUAGES, THEMES
+from streamlit_folium import st_folium
+import folium
+from stmol import showmol
+import py3Dmol
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
     with open(file_name) as f:
@@ -62,8 +67,8 @@ def load_qrcode_to_base64(qrLoad, format):
         url_data = base64.b64encode(buf.getvalue()).decode("utf-8")
         return url_data, buf.getvalue()
 with st.sidebar:
-    choose = option_menu("Apps", ["Home","Photo Editor", "Project Planning", "QR Generator", "About", "Contact", "Additional", "Admin"],
-        icons=[ 'house','camera fill', 'kanban', 'calculator','info-square','envelope','cloud-plus','box-arrow-in-right'],
+    choose = option_menu("Apps", ["Home","Photo Editor","Text Editor","Maps","3D Modeling", "Project Planning", "QR Generator", "About", "Contact", "Additional", "Admin"],
+        icons=[ 'house','camera fill','pen','map','badge-3d', 'kanban', 'calculator','info-square','envelope','cloud-plus','box-arrow-in-right'],
         menu_icon="terminal", default_index=0,orientation="vertical",
         styles={"container": {"padding": "5!important", "background-color": "#262730"},
             "icon": {"color": "#77C9D4", "font-size": "18px"}, 
@@ -244,6 +249,53 @@ elif choose == "Photo Editor":
                 invblur_img=cv2.bitwise_not(blur_img)
                 sketch_img=cv2.divide(grey_img,invblur_img, scale=256.0)
                 st.image(sketch_img,caption=f"Sketch Image",width=500)
+elif choose == "Text Editor":
+    st.markdown('<p class="fontPageHeadings">Text Editor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="title3">Quill Editor</p>', unsafe_allow_html=True)
+    c1, c2 = st.columns([3, 1])
+    c2.subheader("Parameters")
+    with c1:
+        content = st_quill(
+            placeholder="Write your text here",
+            html=c2.checkbox("Return HTML", False),
+            readonly=c2.checkbox("Read only", False),
+            key="quill",
+        )
+        if content:
+            st.subheader("Content")
+            st.text(content)
+    st.markdown('<p class="title3">Ace Editor</p>', unsafe_allow_html=True)
+    c1, c2 = st.columns([3, 1])
+    c2.subheader("Parameters")
+    with c1:
+        content = st_ace(placeholder=c2.text_input("Editor placeholder", value="Write your code here"),
+            language=c2.selectbox("Language mode", options=LANGUAGES, index=121),theme=c2.selectbox("Theme", options=THEMES, index=35),
+            keybinding=c2.selectbox("Keybinding mode", options=KEYBINDINGS, index=3),font_size=c2.slider("Font size", 5, 24, 14),
+            tab_size=c2.slider("Tab size", 1, 8, 4),show_gutter=c2.checkbox("Show gutter", value=True),
+            show_print_margin=c2.checkbox("Show print margin", value=False),wrap=c2.checkbox("Wrap enabled", value=False),
+            auto_update=c2.checkbox("Auto update", value=False),readonly=c2.checkbox("Read-only", value=False),
+            min_lines=45,key="ace",
+        )
+        if content:
+            st.subheader("Content")
+            st.text(content)
+elif choose == "Maps":
+    st.markdown('<p class="fontPageHeadings">Maps</p>', unsafe_allow_html=True)
+    m = folium.Map(location=[52.379189, 4.899431], zoom_start=16)
+    folium.Marker([52.379189, 4.899431], popup="Amsterdam Centraal", tooltip="Amsterdam Centraal").add_to(m)
+    st_data = st_folium(m, width = 1000)
+elif choose == "3D Modeling":
+    st.markdown('<p class="fontPageHeadings">3D Modeling</p>', unsafe_allow_html=True)
+    st.sidebar.title('Show Proteins')
+    prot_str='1A2C,1BML,1D5M,1D5X,1D5Z,1D6E,1DEE,1E9F,1FC2,1FCC,1G4U,1GZS,1HE1,1HEZ,1HQR,1HXY,1IBX,1JBU,1JWM,1JWS'
+    prot_list=prot_str.split(',')
+    bcolor = st.sidebar.color_picker('Pick A Color', '#FFFFFF')
+    protein=st.sidebar.selectbox('select protein',prot_list)
+    style = st.sidebar.selectbox('style',['line','cross','stick','sphere','cartoon','clicksphere'])
+    xyzview = py3Dmol.view(query='pdb:'+protein)
+    xyzview.setStyle({style:{'color':'spectrum'}})
+    xyzview.setBackgroundColor(bcolor)
+    showmol(xyzview, height = 500,width=800)
 elif choose == "Project Planning":
     st.markdown('<p class="fontPageHeadings">Upload your project plan file and generate Gantt chart</p>', unsafe_allow_html=True)
     st.markdown('<p class="title3">Step 1: Download the project plan template</p>', unsafe_allow_html=True)
@@ -805,6 +857,5 @@ elif choose == "Additional":
     link='Image Carousel with Streamlit and Typescript(NodeJS) [link](https://github.com/DenizDogan92/Streamlit-Image-Carousel)'
     st.markdown(link,unsafe_allow_html=True)
     
-
 # footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
 # st.markdown(footer,unsafe_allow_html=True)
