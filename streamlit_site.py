@@ -28,7 +28,7 @@ def icon(icon_name):
     st.markdown(f'<i class="material-icons">{icon_name}</i>', unsafe_allow_html=True)
 local_css("resources/style.css")
 remote_css('https://fonts.googleapis.com/icon?family=Material+Icons')
-def clear_form():
+def clear_contact_form():
     st.session_state["customerFeedbackName"] = ""
     st.session_state["customerFeedbackEmail"] = ""
     st.session_state["customerFeedbackMessage"] = ""
@@ -42,16 +42,6 @@ def sketch_img(img):
     #threhold for images
     ret, thresholded = cv2.threshold(edges, 70, 255, cv2.THRESH_BINARY_INV) 
     return thresholded
-#cartoonize the images
-@st.cache
-def cartoonize_image(img, gray_mode = False):
-    thresholded = sketch_img(img)
-    #applying bilateral fliter wid big numbers to get cartoonnized
-    filtered= cv2.bilateralFilter(img,10,250,250)
-    cartoonized = cv2.bitwise_and(filtered, filtered, mask=thresholded)
-    if gray_mode:
-        return cv2.cvtColor(cartoonized, cv2.COLOR_BGR2GRAY)
-    return cartoonized
 def remake_qrcode(qr_img):
         crop_size = 27
         new_img = qr_img.crop((crop_size, crop_size, qr_img.size[0] - crop_size, qr_img.size[1] - crop_size)) 
@@ -72,8 +62,8 @@ def load_qrcode_to_base64(qrLoad, format):
         url_data = base64.b64encode(buf.getvalue()).decode("utf-8")
         return url_data, buf.getvalue()
 with st.sidebar:
-    choose = option_menu("Apps", ["Home","Photo Editor", "Project Planning", "QR Generator","Graphs", "About", "Contact", "Admin", "Additional"],
-        icons=[ 'house','camera fill', 'kanban', 'calculator', 'bar-chart-steps','info-square','envelope','box-arrow-in-right','cloud-plus'],
+    choose = option_menu("Apps", ["Home","Photo Editor", "Project Planning", "QR Generator", "About", "Contact", "Additional", "Admin"],
+        icons=[ 'house','camera fill', 'kanban', 'calculator','info-square','envelope','cloud-plus','box-arrow-in-right'],
         menu_icon="terminal", default_index=0,orientation="vertical",
         styles={"container": {"padding": "5!important", "background-color": "#262730"},
             "icon": {"color": "#77C9D4", "font-size": "18px"}, 
@@ -217,7 +207,7 @@ elif choose == "Photo Editor":
     st.markdown('<p class="fontPageHeadings">Photo Editor</p>', unsafe_allow_html=True)
     #Add file uploader to allow users to upload photos
     uploaded_file = st.file_uploader("", type=['jpg','png','jpeg'])
-    option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Sketch 3', 'Grey', 'Invert', 'Cartoon', 'Cartoon Grey', 'PencilSketch Color', 'PencilSketch Gray','Stylized Image'))
+    option = st.selectbox('Edit Type',('','Sketch 1', 'Sketch 2', 'Sketch 3', 'Grey', 'Invert'))
     if uploaded_file is not None and option != '':
         image = Image.open(uploaded_file)
         col1, col2 = st.columns( [0.5, 0.5])
@@ -254,26 +244,6 @@ elif choose == "Photo Editor":
                 invblur_img=cv2.bitwise_not(blur_img)
                 sketch_img=cv2.divide(grey_img,invblur_img, scale=256.0)
                 st.image(sketch_img,caption=f"Sketch Image",width=500)
-            # elif option == 'Cartoon':
-            #     imageArray = np.array(image)
-            #     custom_cartonized_image = cartoonize_image(imageArray)
-            #     st.image(custom_cartonized_image,caption=f"Cartoonized Image",width=500)
-            # elif option == 'Cartoon Grey':
-            #     imageArray = np.array(image)
-            #     custom_cartonized_image_gray = cartoonize_image(imageArray, True)
-            #     st.image(custom_cartonized_image_gray,caption=f"Cartoonized Image Gray",width=500)
-            # elif option == 'PencilSketch Color': 
-            #     imageArray = np.array(image)
-            #     sketch_gray, sketch_color = cv2.pencilSketch(imageArray, sigma_s=30, sigma_r=0.1, shade_factor=0.1)
-            #     st.image(sketch_color,caption=f"Pencil Sketch Color",width=500)
-            # elif option == 'PencilSketch Gray': 
-            #     imageArray = np.array(image) 
-            #     sketch_gray, sketch_color = cv2.pencilSketch(imageArray, sigma_s=30, sigma_r=0.1, shade_factor=0.1)
-            #     st.image(sketch_gray,caption=f"Pencil Sketch Gray",width=500)
-            # elif option == 'Stylized Image':
-            #     imageArray = np.array(image)
-            #     stylizated_image = cv2.stylization(imageArray, sigma_s=60, sigma_r=0.07)
-            #     st.image(stylizated_image,caption=f"Stylized",width=500)
 elif choose == "Project Planning":
     st.markdown('<p class="fontPageHeadings">Upload your project plan file and generate Gantt chart</p>', unsafe_allow_html=True)
     st.markdown('<p class="title3">Step 1: Download the project plan template</p>', unsafe_allow_html=True)
@@ -322,16 +292,20 @@ elif choose == "QR Generator":
     uploaded_files = st.file_uploader("",accept_multiple_files=True, type=['jpg','png','jpeg'])
     col1, col2 = st.columns( [0.5, 0.5])
     with col1:
-        gif_qr_size=st.text_input(label='Please Enter the size of Image (default: 100):', key="qrSize")
-        gif_transition_duration=st.text_input(label='GIF transition duration (default: 0.30):', key="gifTrasitionDuration")
+        gif_qr_size=st.number_input(label='Please Enter the size of Image (default: 100):', key="qrSize",value=100, min_value=100, max_value=500, step=50)
+        gif_transition_duration=st.number_input(label='GIF transition duration (default: 0.30):', key="gifTrasitionDuration",value=0.30, min_value=0.10, max_value=3.5, step=0.20)
     with col2:
         qr_type = st.selectbox('QR Code Type',('','Automation Color', 'Automation BW', 'Plain QR'))
-        qr_version = st.selectbox('QR Code Version',(1,2,3,4,5,6))
-        qr_destination_link=st.text_input(label='QR Data:', key="qrDestinationLink")
+        qr_version = st.selectbox('QR Code Version (Size)',(1,2,3,4,5,6,7,8,9,10))
+        qr_destination_link=st.text_input(label='QR Data:', key="qrDestinationLink",max_chars=100)
+    if gif_qr_size == '':
+        gif_qr_size = 100
+    if gif_transition_duration == '':
+        gif_transition_duration = 0.30
     images = []
     for uploaded_file in uploaded_files:
         image = Image.open(uploaded_file)
-        image = image.resize((250,250))
+        image = image.resize((gif_qr_size,gif_qr_size))
         images.append(image)
     if images:
         col1, col2 = st.columns( [0.5, 0.5])
@@ -339,30 +313,29 @@ elif choose == "QR Generator":
             #do GIF  
             st.markdown('<p class="title3">GIF Result</p>', unsafe_allow_html=True)  
             output = io.BytesIO()
-            imageio.mimwrite(output, images, "gif", duration=0.30)
+            imageio.mimwrite(output, images, "gif", duration=gif_transition_duration)
             data_url = base64.b64encode(output.getvalue()).decode("utf-8")
-            imageio.mimsave('gifResult.gif', images, duration=0.30)
+            imageio.mimsave('gifResult.gif', images, duration=gif_transition_duration)
             st.markdown(f'</br> <img src="data:image/gif;base64,{data_url}" alt="Output GIF">',unsafe_allow_html=True,)
             st.download_button(label='Download GIF', data=output, file_name='gifResult.gif', mime='image/gif' )
         with col2:
             #do QR
-            saved_qr_name = 'tempQR.gif'
-            st.markdown('<p class="title3">QR Code Result</p>', unsafe_allow_html=True)
-            if qr_type == 'Automation Color' and qr_destination_link and qr_version:
-                version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=True,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
-                qrLoad = Image.open(saved_qr_name)
-                data_url, data = load_qrcode_to_base64(qrLoad, 'gif')
-                st.markdown(f'</br> <img src="data:image/gif;base64,{data_url}" alt="Output QR">',unsafe_allow_html=True,)
-                st.download_button(label='Download QR Code', data=data, file_name='qrCodeResult.gif', mime='image/gif' )
-            elif qr_type == 'Automation BW' and qr_destination_link and qr_version:
-                version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=False,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
-            elif qr_type == 'Plain QR'and qr_destination_link:
-                version, level, qr_name = amzqr.run(words=qr_destination_link,save_name=saved_qr_name,)
-            os.remove('gifResult.gif')
-            qrLoad.close()
-            os.remove(saved_qr_name)
-elif choose == "Graphs":
-    st.write('TODO')    
+            if qr_type != '' and qr_version != '' and qr_destination_link != '':
+                saved_qr_name = 'tempQR.gif'
+                st.markdown('<p class="title3">QR Code Result</p>', unsafe_allow_html=True)
+                if qr_type == 'Automation Color' and qr_destination_link and qr_version:
+                    version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=True,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
+                    qrLoad = Image.open(saved_qr_name)
+                    data_url, data = load_qrcode_to_base64(qrLoad, 'gif')
+                    st.markdown(f'</br> <img src="data:image/gif;base64,{data_url}" alt="Output QR">',unsafe_allow_html=True,)
+                    st.download_button(label='Download QR Code', data=data, file_name='qrCodeResult.gif', mime='image/gif' )
+                    if qrLoad : qrLoad.close()
+                elif qr_type == 'Automation BW' and qr_destination_link and qr_version:
+                    version, level, qr_name = amzqr.run(words=qr_destination_link,version=qr_version,level='H',picture="gifResult.gif", colorized=False,contrast=1.0,brightness=1.0,save_name=saved_qr_name)
+                elif qr_type == 'Plain QR'and qr_destination_link:
+                    version, level, qr_name = amzqr.run(words=qr_destination_link,save_name=saved_qr_name,)
+                os.remove('gifResult.gif')
+                os.remove(saved_qr_name)
 elif choose == "About":
     col1, col2 = st.columns( [0.8, 0.2])
     with col1:               # To display the header text using css style
@@ -376,12 +349,12 @@ elif choose == "Contact":
     st.markdown('<p class="fontPageHeadings">Contact Form</p>', unsafe_allow_html=True)
     with st.form(key='columns_in_form2',clear_on_submit=True): #set clear_on_submit=True so that the form will be reset/cleared once it's submitted
         #st.write('Please help us improve!')
-        Name=st.text_input(label='Please Enter Your Name', key="customerFeedbackName")
-        Email=st.text_input(label='Please Enter Email', key="customerFeedbackEmail")
-        Message=st.text_input(label='Please Enter Your Message', key="customerFeedbackMessage")
+        Name=st.text_input(label='Please Enter Your Name', key="customerFeedbackName",max_chars=100)
+        Email=st.text_input(label='Please Enter Email', key="customerFeedbackEmail",max_chars=100)
+        Message=st.text_input(label='Please Enter Your Message', key="customerFeedbackMessage",max_chars=200)
         col1, col2 = st.columns([1,1])
         with col1:
-            cleared = st.form_submit_button(label='Clear', on_click=clear_form)
+            cleared = st.form_submit_button(label='Clear', on_click=clear_contact_form)
         with col2:
             submitted = st.form_submit_button('Submit')
         if submitted:
@@ -395,8 +368,8 @@ elif choose == "Admin":
         st.markdown("<p>ADMIN Login:</p>", unsafe_allow_html=True)
         with st.form(key='login_form'):
             if "username" not in st.session_state:
-                email = st.text_input("Username or e-mail")
-                password = st.text_input("Password", type="password")
+                email = st.text_input("Username or e-mail",max_chars=100)
+                password = st.text_input("Password", type="password",max_chars=100)
             submit_button = st.form_submit_button(label="Submit")
 
         if submit_button:
@@ -829,6 +802,9 @@ elif choose == "Additional":
             }
         }'''
     st.code(code, language='Java')
+    link='Image Carousel with Streamlit and Typescript(NodeJS) [link](https://github.com/DenizDogan92/Streamlit-Image-Carousel)'
+    st.markdown(link,unsafe_allow_html=True)
+    
 
 # footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
 # st.markdown(footer,unsafe_allow_html=True)
