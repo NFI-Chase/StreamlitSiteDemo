@@ -802,7 +802,7 @@ elif choose == "Additional":
 elif choose == "Admin":
     def loginPage():
         users = {"test":"test"}
-        st.markdown("<p>ADMIN Login:</p>", unsafe_allow_html=True)
+        st.markdown('<p class="fontPageHeadings">ADMIN Login:</p>', unsafe_allow_html=True)
         with st.form(key='login_form'):
             if "username" not in st.session_state:
                 email = st.text_input("Username or e-mail",max_chars=100)
