@@ -439,88 +439,6 @@ elif choose == "Contact":
             st.balloons()
         if cleared:
             st.info('Form Cleared')
-elif choose == "Admin":
-    def loginPage():
-        users = {"test":"test"}
-        st.markdown("<p>ADMIN Login:</p>", unsafe_allow_html=True)
-        with st.form(key='login_form'):
-            if "username" not in st.session_state:
-                email = st.text_input("Username or e-mail",max_chars=100)
-                password = st.text_input("Password", type="password",max_chars=100)
-            submit_button = st.form_submit_button(label="Submit")
-
-        if submit_button:
-            if email.lower() in users and users[email.lower()] == password:
-                st.success("Succesfully logged in! :tada:")
-                st.session_state.logged_in = True
-                with st.spinner("Redirecting to application..."):
-                        time.sleep(1)
-                        st.experimental_rerun()
-    if "logged_in" in st.session_state and st.session_state.logged_in == True:
-        if st.button('Logout', key='adminLogout'):
-            st.session_state.logged_in = False
-            st.legacy_caching.clear_cache()
-            st.experimental_rerun()
-        def _tabs(tabs_data = {}, default_active_tab=0):
-            tab_titles = list(tabs_data.keys())
-            if not tab_titles:
-                return None
-            active_tab = st.radio("", tab_titles, index=default_active_tab)
-            child = tab_titles.index(active_tab)+1
-            st.markdown("""  
-                <style type="text/css">
-                div[role=radiogroup] > label > div:first-of-type {
-                display: none
-                }
-                div[role=radiogroup] {
-                    flex-direction: unset
-                }
-                div[role=radiogroup] label {             
-                    border: 1px solid #black;
-                    background: black;
-                    padding: 4px 12px;
-                    border-radius: 4px 4px 0 0;
-                    position: relative;
-                    top: 1px;
-                    }
-                div[role=radiogroup] label:nth-child(""" + str(child) + """) {    
-                    background: #77C9D4 !important;
-                    border-bottom: 1px solid transparent;
-                }            
-                </style>
-            """,unsafe_allow_html=True)        
-            return tabs_data[active_tab]
-
-        def _show_video():
-            st.title("Russia – Ukraine conflict / crisis Explained")
-            st.video("https://www.youtube.com/watch?v=h2P9AmGcMdM")
-
-        def _fake_df():
-            N = 50
-            rand = pd.DataFrame()
-            rand['a'] = np.arange(N)
-            rand['b'] = np.random.rand(N)
-            rand['c'] = np.random.rand(N)    
-            return rand
-
-        def do_tabs():
-            st.markdown("Welcome User")
-            tab_content = _tabs({
-                    "Tab html": "<h2> Hello Streamlit, <br/> what a cool tool! </h2>",
-                    "Tab video": _show_video, 
-                    "Tab df": _fake_df()
-                })
-            if callable(tab_content):
-                tab_content()
-            elif type(tab_content) == str:
-                st.markdown(tab_content, unsafe_allow_html=True)
-            else:
-                st.write(tab_content)
-        do_tabs()
-    if "logged_in" not in st.session_state:
-        loginPage()
-    if "logged_in" in st.session_state and st.session_state.logged_in == False:
-        loginPage() 
 elif choose == "Additional":
     st.markdown('<p class="fontPageHeadings">Additional Projects</p>', unsafe_allow_html=True)
     link='Code Gallery [link](https://streamlit.io/gallery)'
@@ -881,6 +799,90 @@ elif choose == "Additional":
     st.code(code, language='Java')
     link='Image Carousel with Streamlit and Typescript(NodeJS) [link](https://github.com/DenizDogan92/Streamlit-Image-Carousel)'
     st.markdown(link,unsafe_allow_html=True)
-    
+elif choose == "Admin":
+    def loginPage():
+        users = {"test":"test"}
+        st.markdown("<p>ADMIN Login:</p>", unsafe_allow_html=True)
+        with st.form(key='login_form'):
+            if "username" not in st.session_state:
+                email = st.text_input("Username or e-mail",max_chars=100)
+                password = st.text_input("Password", type="password",max_chars=100)
+            submit_button = st.form_submit_button(label="Submit")
+
+        if submit_button:
+            if email.lower() in users and users[email.lower()] == password:
+                st.success("👍 Succesfully logged in! :tada:")
+                st.session_state.logged_in = True
+                with st.spinner("Redirecting to application..."):
+                        time.sleep(1)
+                        st.experimental_rerun()
+            else:
+                st.error("👎 Unsuccessful Logon! 😔")
+    if "logged_in" in st.session_state and st.session_state.logged_in == True:
+        if st.button('Logout', key='adminLogout'):
+            st.session_state.logged_in = False
+            st.legacy_caching.clear_cache()
+            st.experimental_rerun()
+        def _tabs(tabs_data = {}, default_active_tab=0):
+            tab_titles = list(tabs_data.keys())
+            if not tab_titles:
+                return None
+            active_tab = st.radio("", tab_titles, index=default_active_tab)
+            child = tab_titles.index(active_tab)+1
+            st.markdown("""  
+                <style type="text/css">
+                div[role=radiogroup] > label > div:first-of-type {
+                display: none
+                }
+                div[role=radiogroup] {
+                    flex-direction: unset
+                }
+                div[role=radiogroup] label {             
+                    border: 1px solid #black;
+                    background: black;
+                    padding: 4px 12px;
+                    border-radius: 4px 4px 0 0;
+                    position: relative;
+                    top: 1px;
+                    }
+                div[role=radiogroup] label:nth-child(""" + str(child) + """) {    
+                    background: #77C9D4 !important;
+                    border-bottom: 1px solid transparent;
+                }            
+                </style>
+            """,unsafe_allow_html=True)        
+            return tabs_data[active_tab]
+
+        def _show_video():
+            st.title("Russia – Ukraine conflict / crisis Explained")
+            st.video("https://www.youtube.com/watch?v=h2P9AmGcMdM")
+
+        def _fake_df():
+            N = 50
+            rand = pd.DataFrame()
+            rand['a'] = np.arange(N)
+            rand['b'] = np.random.rand(N)
+            rand['c'] = np.random.rand(N)    
+            return rand
+
+        def do_tabs():
+            st.markdown("Welcome User")
+            tab_content = _tabs({
+                    "Tab html": "<h2> Hello Streamlit, <br/> what a cool tool! </h2>",
+                    "Tab video": _show_video, 
+                    "Tab df": _fake_df()
+                })
+            if callable(tab_content):
+                tab_content()
+            elif type(tab_content) == str:
+                st.markdown(tab_content, unsafe_allow_html=True)
+            else:
+                st.write(tab_content)
+        do_tabs()
+    if "logged_in" not in st.session_state:
+        loginPage()
+    if "logged_in" in st.session_state and st.session_state.logged_in == False:
+        loginPage() 
+
 # footer='<div class="footer">Developed with <b style="color:red";> ❤ </b> by Michael Strydom </br> Sponsor the Creator </br> <a href="https://paypal.me/michaelericstrydom" target="_blank">Michael Strydom</a></div>'
 # st.markdown(footer,unsafe_allow_html=True)
