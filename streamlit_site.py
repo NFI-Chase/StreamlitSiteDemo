@@ -81,7 +81,7 @@ if choose == "Home":
     with col1:
         st.write("")
     with col2:
-        st.video(url)
+        st.video(url,start_time=1080)
     with col3:
         st.write("")  
     def init(post_init=False):
