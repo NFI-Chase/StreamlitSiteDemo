@@ -805,8 +805,8 @@ elif choose == "Admin":
         st.markdown('<p class="fontPageHeadings">ADMIN Login:</p>', unsafe_allow_html=True)
         with st.form(key='login_form'):
             if "username" not in st.session_state:
-                email = st.text_input("Username or e-mail",max_chars=100)
-                password = st.text_input("Password", type="password",max_chars=100)
+                email = st.text_input("Username or e-mail",max_chars=100, help="HINT: test")
+                password = st.text_input("Password", type="password",max_chars=100, help="HINT: test")
             submit_button = st.form_submit_button(label="Submit")
 
         if submit_button:
