@@ -12,3 +12,4 @@ streamlit_quill
 streamlit_ace
 streamlit-folium
 stmol
+streamlit_cropper

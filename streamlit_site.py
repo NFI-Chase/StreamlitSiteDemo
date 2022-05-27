@@ -21,6 +21,7 @@ from streamlit_folium import st_folium
 import folium
 from stmol import showmol
 import py3Dmol
+from streamlit_cropper import st_cropper
 st.set_page_config(page_title="Streamlit Demo Site",layout="wide",initial_sidebar_state="expanded")
 def local_css(file_name):
     with open(file_name) as f:
@@ -67,8 +68,8 @@ def load_qrcode_to_base64(qrLoad, format):
         url_data = base64.b64encode(buf.getvalue()).decode("utf-8")
         return url_data, buf.getvalue()
 with st.sidebar:
-    choose = option_menu("Apps", ["Home","Photo Editor","Text Editor","Maps","3D Modeling", "Project Planning", "QR Generator", "About", "Contact", "Additional", "Admin"],
-        icons=[ 'house','camera fill','pen','map','badge-3d', 'kanban', 'calculator','info-square','envelope','cloud-plus','box-arrow-in-right'],
+    choose = option_menu("Apps", ["Home","Photo Editor", "Image Crop","Text Editor","Maps","3D Modeling", "Project Planning", "QR Generator", "About", "Contact", "Additional", "Admin"],
+        icons=[ 'house','camera fill','crop','pen','map','badge-3d', 'kanban', 'calculator','info-square','envelope','cloud-plus','box-arrow-in-right'],
         menu_icon="terminal", default_index=0,orientation="vertical",
         styles={"container": {"padding": "5!important", "background-color": "#262730"},
             "icon": {"color": "#77C9D4", "font-size": "18px"}, 
@@ -249,6 +250,30 @@ elif choose == "Photo Editor":
                 invblur_img=cv2.bitwise_not(blur_img)
                 sketch_img=cv2.divide(grey_img,invblur_img, scale=256.0)
                 st.image(sketch_img,caption=f"Sketch Image",width=500)
+elif choose == "Image Crop":
+    st.markdown('<p class="fontPageHeadings">Image Crop</p>', unsafe_allow_html=True)
+    img_file = st.sidebar.file_uploader(label='Upload a file', type=['png', 'jpg'])
+    realtime_update = st.sidebar.checkbox(label="Update in Real Time", value=True)
+    box_color = st.sidebar.color_picker(label="Box Color", value='#0000FF')
+    aspect_choice = st.sidebar.radio(label="Aspect Ratio", options=["1:1", "16:9", "4:3", "2:3", "Free"])
+    aspect_dict = {
+        "1:1": (1, 1),
+        "16:9": (16, 9),
+        "4:3": (4, 3),
+        "2:3": (2, 3),
+        "Free": None
+    }
+    aspect_ratio = aspect_dict[aspect_choice]
+    if img_file:
+        img = Image.open(img_file)
+        if not realtime_update:
+            st.write("Double click to save crop")
+        # Get a cropped image from the frontend
+        cropped_img = st_cropper(img, realtime_update=realtime_update, box_color=box_color, aspect_ratio=aspect_ratio)
+        # Manipulate cropped image at will
+        st.write("Preview")
+        _ = cropped_img.thumbnail((250,250))
+        st.image(cropped_img,width=500)
 elif choose == "Text Editor":
     st.markdown('<p class="fontPageHeadings">Text Editor</p>', unsafe_allow_html=True)
     st.markdown('<p class="title3">Quill Editor</p>', unsafe_allow_html=True)
